@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "esi-controls-async"
+version = "0.0.1"
+authors = [
+  { name="Julian Day", email="julianfday@gmail.com" },
+]
+description = "Python API asyncclient to the ESI Controls API for monitoring and controlling your thermostat."
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+
+[project.urls]
+"Homepage" = "https://github.com/j-f-d/esi-controls-async"
+"Bug Tracker" = "https://github.com/j-f-d/esi-controls-async/issues"
