@@ -64,15 +64,20 @@ class ESICentroAPI:
         self._session = session
         self._host = host
         self._auth: ESIAuthorization | None = None
-        self._message_id = 1111
+        self._message_id = 0
 
     def available(self) -> bool:
         """Check if this coordinator is available."""
         return self._auth is not None
 
-    def _next_message_id(self) -> str:
+    def _next_message_id(self) -> int:
+        # Message ID is sent as a 16bit field to the device with each update, so
+        # it can be used to tie an update with a data dump of the messages received
+        # by the device. It isn't clear what else the server might do with it,
+        # but the devices seems to ignore the messae ID, even if repeated.
         self._message_id += 1
-        return str(self._message_id)
+        self._message_id &= 0xFFFF  # Keep the message ID within 16 bits
+        return self._message_id
 
     async def _json(self, response: ClientResponse) -> dict[str, Any]:
         """Local wrapper for JSON parsing function"""
@@ -170,14 +175,20 @@ class ESICentroAPI:
         device_id: str,
         work_mode: int,
         temperature: int,
+        message_id: int | None = None,
     ) -> None:
         if self._auth is None:
             raise ESINoAuthorization("No authorization available")
 
+        # The message ID is sent as a 16bit field to the device with each update.
+        # It might be useful for a client to maintain a per device counter, but we
+        # default to an internally managed incremental counter.
+        messageIdStr = f"{message_id&0xFFFF:04x}" if message_id is not None else f"{self._next_message_id():04x}"
+
         params = {
             "user_id": self._auth.user_id,
             "token": self._auth.token,
-            "messageId": self._next_message_id(),
+            "messageId": messageIdStr,
             ATTR_DEVICE_ID: device_id,
             ATTR_WORK_MODE: str(work_mode),
             ATTR_TARGET_TEMPERATURE: temperature,
