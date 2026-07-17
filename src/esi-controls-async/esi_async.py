@@ -13,6 +13,8 @@ SET_TEMP_SUFFIX: Final = "/setThermostatWorkModeNew"
 # The device types with the exception of 1 are from https://github.com/josh-taylor/esi/blob/main/esi/esi.py
 # Device type 1 is discovered by trial and error.
 # These are used for the ATTR_DEVICE_TYPE parameter when fetching devices.
+# Device type 1 comes from the DeclanSC's esi_thermostat integration for Home Assistant.
+# The other device types come from Josh Taylor's esi-controls library.
 KNOWN_DEVICE_TYPES: Final = "1,2,4,10,20,23,25"
 
 ATTR_DEVICE_ID: Final = "device_id"
@@ -68,7 +70,7 @@ class ESICentroAPI:
         """Check if this coordinator is available."""
         return self._auth is not None
 
-    def next_message_id(self) -> str:
+    def _next_message_id(self) -> str:
         self._message_id += 1
         return str(self._message_id)
 
@@ -132,11 +134,20 @@ class ESICentroAPI:
         if self._auth is None:
             raise ESINoAuthorization("No authorization available")
 
+        # A note on page_size: I only have 1 device to test with. 
+        # Setting it to a low number, 0 or 1, still return the data for that device,
+        # so I don't know in what sense the API actually supports pagination and I
+        # have no way to test it.
+        # The ESI controls app always seems to send "pageNum" and "online" parameters, so I include them here.
+        # I'm assuming that pageNum could be used to fetch additional devices if necessary,
+        # while "online": 1 filters out offline devices, however that is determined.
         params = {
             "user_id": self._auth.user_id,
             "token": self._auth.token,
             ATTR_DEVICE_TYPE: device_types_csv,
             "pageSize": page_size,
+            "pageNum": 0,
+            "online": 1,
         }
 
         async with self._session.post(
@@ -166,7 +177,7 @@ class ESICentroAPI:
         params = {
             "user_id": self._auth.user_id,
             "token": self._auth.token,
-            "messageId": self.next_message_id(),
+            "messageId": self._next_message_id(),
             ATTR_DEVICE_ID: device_id,
             ATTR_WORK_MODE: str(work_mode),
             ATTR_TARGET_TEMPERATURE: temperature,
