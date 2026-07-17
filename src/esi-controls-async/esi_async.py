@@ -138,7 +138,7 @@ class ESICentroAPI:
         # Setting it to a low number, 0 or 1, still return the data for that device,
         # so I don't know in what sense the API actually supports pagination and I
         # have no way to test it.
-        # The ESI controls app always seems to send "pageNum" and "online" parameters, so I include them here.
+        # The ESI Centro app always seems to send "pageNum" and "online" parameters, so I include them here.
         # I'm assuming that pageNum could be used to fetch additional devices if necessary,
         # while "online": 1 filters out offline devices, however that is determined.
         params = {
