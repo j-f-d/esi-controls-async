@@ -4,8 +4,9 @@
 
 Python API async client to the ESI Controls API for monitoring and controlling your thermostat.
 
-This is mostly derived from Josh Taylor's [ESI_Controls] which is synchronous only, but there
-are also lessons learned from DeclanSC's [HASS_ESI_Thermostat] code.
+This is mostly derived from Josh Taylor's [ESI_Controls] which is synchronous only, but there are also lessons learned from DeclanSC's [HASS_ESI_Thermostat] code.
+
+The main motivation for writing this is to support my version of [HASS_ESI_Thermostat-jfd] which I intend to use to separate the protocol specific code from the integration, as described in [Building_a_Python_Library_for_an_API].
 
 ## Usage
 
@@ -68,21 +69,25 @@ Now to update the target temperature, or change work mode, you need that dev_id:
 ```
 
 The known work modes for the Water Heater are:
-    Auto: 0
-    Off: 1
-    Manual: 2
-    Auto, with temperature override: 4
-    Boost: 5
+
+* Auto: 0
+* Off: 1
+* Manual: 2
+* Preset: 3 (but I haven't discovered how to use this)
+* Auto, with temperature override: 4
+* Boost: 5
 
 The known work modes for the Climate controls are:
-    Auto: 0
-    Auto, with temperature override: 1
-    Off: 4
-    Manual: 5
+
+* Auto: 0
+* Auto, with temperature override: 1
+* Off: 4
+* Manual: 5
 
 I only have a Water Heater module [ESCTP5] and I mostly use either manual or off. For this device, valid temperatures are 25.0 to 65.0 in half degree increments.
 
-References:
 [ESI_Controls]: <https://github.com/josh-taylor/esi/>
 [ESCTP5]: <https://www.esicontrols.co.uk/product/wifi-programmable-cylinder-thermostat/>
 [HASS_ESI_Thermostat]: <https://github.com/DeclanSC/hass-esi-thermostat>
+[HASS_ESI_Thermostat-jfd]: <https://github.com/j-f-d/hass-esi-thermostat>
+[Building_a_Python_Library_for_an_API]: <https://developers.home-assistant.io/docs/api_lib_index>
