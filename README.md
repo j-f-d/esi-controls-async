@@ -4,7 +4,8 @@
 
 Python API async client to the ESI Controls API for monitoring and controlling your thermostat.
 
-This is somewhat inspired by Josh Taylor's [ESI_Controls] which is synchronous only.
+This is mostly derived from Josh Taylor's [ESI_Controls] which is synchronous only, but there
+are also lessons learned from DeclanSC's [HASS_ESI_Thermostat] code.
 
 ## Usage
 
@@ -84,3 +85,4 @@ I only have a Water Heater module [ESCTP5] and I mostly use either manual or off
 References:
 [ESI_Controls]: https://github.com/josh-taylor/esi/
 [ESCTP5]: https://www.esicontrols.co.uk/product/wifi-programmable-cylinder-thermostat/
+[HASS_ESI_Thermostat]: https://github.com/DeclanSC/hass-esi-thermostat
