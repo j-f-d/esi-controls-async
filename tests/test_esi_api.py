@@ -6,7 +6,6 @@ from typing import Any
 
 sys.path.append("src/esi-controls-async")
 from esi_async import (
-    ATTR_TH_WORK,
     ESICentroAPI,
     ATTR_DEVICE_ID,
     ATTR_DEVICE_NAME,
