@@ -83,6 +83,6 @@ The known work modes for the Climate controls are:
 I only have a Water Heater module [ESCTP5] and I mostly use either manual or off. For this device, valid temperatures are 25.0 to 65.0 in half degree increments.
 
 References:
-[ESI_Controls]: https://github.com/josh-taylor/esi/
-[ESCTP5]: https://www.esicontrols.co.uk/product/wifi-programmable-cylinder-thermostat/
-[HASS_ESI_Thermostat]: https://github.com/DeclanSC/hass-esi-thermostat
+[ESI_Controls]: <https://github.com/josh-taylor/esi/>
+[ESCTP5]: <https://www.esicontrols.co.uk/product/wifi-programmable-cylinder-thermostat/>
+[HASS_ESI_Thermostat]: <https://github.com/DeclanSC/hass-esi-thermostat>
