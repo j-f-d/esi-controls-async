@@ -58,11 +58,12 @@ class ESICentroAPI:
 
     def __init__(
         self,
+        *,
         session: ClientSession,
-        host: str = ESICENTRO_URL
+        url: str = ESICENTRO_URL
     ) -> None:
         self._session = session
-        self._host = host
+        self._url = url
         self._auth: ESIAuthorization | None = None
         self._message_id = 0
 
@@ -117,7 +118,7 @@ class ESICentroAPI:
         payload = {"email": email, "password": password}
 
         async with self._session.post(
-            self._host + LOGIN_SUFFIX,
+            self._url + LOGIN_SUFFIX,
             data=payload,
             timeout=ClientTimeout(total=15),
         ) as response:
@@ -156,7 +157,7 @@ class ESICentroAPI:
         }
 
         async with self._session.post(
-            self._host + DEVICE_LIST_SUFFIX,
+            self._url + DEVICE_LIST_SUFFIX,
             params=params,
             timeout=ClientTimeout(total=15),
         ) as response:
@@ -195,7 +196,7 @@ class ESICentroAPI:
         }
 
         async with self._session.post(
-            self._host + SET_TEMP_SUFFIX,
+            self._url + SET_TEMP_SUFFIX,
             params=params,
             timeout=ClientTimeout(total=5),
         ) as response:

@@ -57,7 +57,7 @@ async def main() -> None:
     work_mode_climate = {"auto": 0, "override": 1, "off": 4, "manual": 5}
 
     async with aiohttp.ClientSession() as session:
-        api = ESICentroAPI(session)
+        api = ESICentroAPI(session=session)
         await api.login(email=args.email, password=args.password)
 
         devices: dict[str, Any] = await api.async_list_devices(

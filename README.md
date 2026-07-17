@@ -16,7 +16,7 @@ import aiohttp, esi_async
 async def esi_client() -> None:
     # E.g. No existing session, so create one.
     async with aiohttp.ClientSession() as session:
-        api = esi_async.ESICentroAPI(session)
+        api = esi_async.ESICentroAPI(session=session)
 ```
 
 With the object, you can login to associate a user_id and token, which
