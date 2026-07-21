@@ -11,6 +11,9 @@ authors = [
 description = "Python API asyncclient to the ESI Controls API for monitoring and controlling your thermostat."
 readme = "README.md"
 requires-python = ">=3.9"
+dependencies = [
+    "aiohttp",
+]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
