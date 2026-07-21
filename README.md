@@ -8,7 +8,9 @@ This is mostly derived from Josh Taylor's [ESI_Controls] which is synchronous on
 
 The main motivation for writing this is to support my version of [HASS_ESI_Thermostat-jfd] which I intend to use to separate the protocol specific code from the integration, as described in [Building_a_Python_Library_for_an_API].
 
-## Usage
+Apparently, the ESI Controls 'Centro' mobile app uses a superset of those requests used by this API to control the ESI devices via their server.
+
+## ESICentroAPI Usage
 
 This API depends on being initialized with a aiohttp.ClientSession:
 
@@ -20,7 +22,7 @@ async def esi_client() -> None:
         api = esi_async.ESICentroAPI(session=session)
 ```
 
-With the object, you can login to associate a user_id and token, which
+With the resulting object, you can login to associate a user_id and token, which
 will be used for the session. The user_id and token are long lived, but if they
 do expire, you can log in again. The API doesn't store the email and password.
 
@@ -35,36 +37,38 @@ Assuming authorization was successful, available will return true.
             raise SystemExit("Can't log in")
 ```
 
-With the authorization complete, you can enumerate your devices:
+With the authorization complete, you can request that API's cache of devices is updated from the server:
 
 ```Python
-        devices: dict[str, Any] = await api.async_list_devices(
-            device_types_csv="1,2,4,10,20,23,25",
-            page_size=4096,
+        await api.async_update_devices(
+            device_types_csv=device_types_csv,
+            page_size=100,      # page_size doesn't seem to matter when there is only 1 device
         )
+
 ```
 
-Now you can view the state of the devices from that dict, there's nothing
-special about this, except that some expected attributes have constants
-associated with them. Also be careful about the spellings used by the
-protocol as some of them deviate from English in surprising ways.
+Once the update is complete, the number of devices found can be checked:
 
 ```Python
-        for i, d in enumerate(devices.get("devices", [])):
-            dev_id = str(d.get(ATTR_DEVICE_ID, ""))
-            name = str(d.get(ATTR_DEVICE_NAME, ""))
-            dtype = d.get(ATTR_DEVICE_TYPE, "")
-            measured = float(d.get(ATTR_MEASURED_TEMPERATURE, "")) / 10.0
-            target = float(d.get(ATTR_TARGET_TEMPERATURE, "")) / 10.0
-            print(f"  [{i}] id={dev_id!r} name={name!r} type={dtype} measured={measured:.1f} target={target:.1f}")
+        if api.num_devices() == 0:
+            print("No devices returned.")
+            return
+```
+
+To retrieve the dict for first device. The most common attributes have constants associated with them. Also be careful about the spellings used by the protocol as some of them deviate from English in surprising ways:
+
+```Python
+        d = api.device_by_index(0)
+        if d is not None:
+            dev_id = d.get(ATTR_DEVICE_ID, "")
+            print(f"id={dev_id})
 ```
 
 Now to update the target temperature, or change work mode, you need that dev_id:
 
 ```Python
-        dev_id = str(devices.get("devices", [])[0].get(ATTR_DEVICE_ID, ""))
         work_mode = 0 # Auto on both climate and water heater.
-        temperature = 195 # Actual temp * 10
+        temperature = 19.5 # Target temperature in Celcius
         await api.async_set_work_mode(device_id=dev_id, work_mode=work_mode, temperature=temperature)
 ```
 
@@ -85,6 +89,17 @@ The known work modes for the Climate controls are:
 * Manual: 5
 
 I only have a Water Heater module [ESCTP5] and I mostly use either manual or off. For this device, valid temperatures are 25.0 to 65.0 in half degree increments.
+
+To check whether the update took effect:
+
+```Python
+        await api.async_update_devices()
+        # There is no guarantee that device index values won't be different each update,
+        # especially if a device goes off-line, so use the dev_id now.
+        d = api.device_by_device_id(dev_id)
+        target_temp = float(d.get(ATTR_TARGET_TEMPERATURE, "250"))/10
+        print(f"id={dev_id} temp={target_temp:.1f}")
+```
 
 [ESI_Controls]: <https://github.com/josh-taylor/esi/>
 [ESCTP5]: <https://www.esicontrols.co.uk/product/wifi-programmable-cylinder-thermostat/>

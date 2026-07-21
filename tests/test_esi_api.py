@@ -1,19 +1,10 @@
 #!/usr/bin/env python3
-from __future__ import annotations
-
 import aiohttp, asyncio, argparse, sys
 from typing import Any
 
 sys.path.append("src/esi-controls-async")
-from esi_async import (
-    ESICentroAPI,
-    ATTR_DEVICE_ID,
-    ATTR_DEVICE_NAME,
-    ATTR_DEVICE_TYPE,
-    ATTR_MEASURED_TEMPERATURE,
-    ATTR_TARGET_TEMPERATURE,
-    ATTR_TH_WORK,
-)
+from esi_async import (ESICentroAPI, ATTR_DEVICE_ID)
+from esi_device import ESIDevice
 
 
 def prompt_int(prompt: str) -> int:
@@ -39,6 +30,13 @@ def parse_indices(raw: str) -> list[int]:
     return [int(p) for p in parts]
 
 
+def print_device(ed : ESIDevice) -> None:
+    idle = ed.th_work=="0"
+    print(f"id={ed.device_id!r}", f"name={ed.device_name!r}", f"type={ed.device_type!r}",
+          f"measured={ed.measured_temperature:.1f}", f"target={ed.target_temperature:.1f}",
+          f"work_mode={ed.work_mode!r}", f"idle={idle}")
+
+
 async def main() -> None:
 
     parser = argparse.ArgumentParser()
@@ -60,49 +58,60 @@ async def main() -> None:
         api = ESICentroAPI(session=session)
         await api.login(email=args.email, password=args.password)
 
-        devices: dict[str, Any] = await api.async_list_devices(
+        await api.async_update_devices(
             device_types_csv=device_types_csv,
             page_size=args.page_size,
         )
 
-        if not devices:
+        if api.num_devices() == 0:
             print("No devices returned.")
             return
 
+        found = []
         print("\nDiscovered devices:")
-        for i, d in enumerate(devices.get("devices", [])):
-            dev_id = str(d.get(ATTR_DEVICE_ID, ""))
-            name = str(d.get(ATTR_DEVICE_NAME, ""))
-            dtype = d.get(ATTR_DEVICE_TYPE, "")
-            measured = float(d.get(ATTR_MEASURED_TEMPERATURE, "")) / 10.0
-            target = float(d.get(ATTR_TARGET_TEMPERATURE, "")) / 10.0
-            idle = d.get(ATTR_TH_WORK, "0") == "0"
-            print(f"  [{i}] id={dev_id!r} name={name!r} type={dtype} measured={measured:.1f} target={target:.1f} idle={idle}")
+        for i in range(api.num_devices()):
+            d = api.device_by_index(i)
+            if d is None:
+                continue
+            ed = ESIDevice(api = api, device_id = d.get(ATTR_DEVICE_ID, ""))
+            found.append(ed)
+            print(f"  [{i}] ", end='')
+            print_device(ed)
 
-        sel = input("\nSelect device index/indices (e.g. '0' or '0,2,3'): ").strip()
+        sel = input("\nSelect device index/indices (e.g. '0' or '0,2,3'): ").strip() or "0"
         indices = parse_indices(sel)
 
         chosen = []
         for idx in indices:
-            if idx < 0 or idx >= len(devices.get("devices", [])):
+            d = found[idx]
+            if d is None:
                 raise SystemExit(f"Index out of range: {idx}")
-            chosen.append(devices.get("devices", [])[idx])
+            chosen.append(d)
 
-        if chosen and chosen[0].get(ATTR_DEVICE_TYPE) == "81":
+        if chosen and chosen[0].device_type == "81":
             work_mode_map = work_mode_waterheater
             eg_temp = 55.0
         else:
             work_mode_map = work_mode_climate
             eg_temp = 20.0
 
-        temperature = float(input(f"Enter target temperature (e.g. {eg_temp:.1f}): ")) * 10.0
+        temperature = float(input(f"Enter target temperature in Celcius (e.g. {eg_temp:.1f}): ").strip() or str(eg_temp))
         work_mode = prompt_choice("Enter work mode", work_mode_map)
 
         print("\nSending command...")
         for d in chosen:
-            device_id = str(d.get(ATTR_DEVICE_ID, ""))
-            print(f"  -> device_id={device_id} work_mode={work_mode} temperature={temperature:.0f}")
-            await api.async_set_work_mode(device_id=device_id, work_mode=work_mode, temperature=int(temperature))
+            print(f"  -> device_id={d.device_id} work_mode={d.work_mode} temperature={temperature:.1f}C")
+            await d.async_set_work_mode(work_mode=work_mode, temperature=temperature)
+
+        # Allow the update to propagate
+        print(f"Waiting...")
+        await asyncio.sleep(3.0)
+        await api.async_update_devices()
+
+        print("\nChecking update success...")
+        for d in chosen:
+            d.update()
+            print_device(d)
 
         print("\nDone.")
 

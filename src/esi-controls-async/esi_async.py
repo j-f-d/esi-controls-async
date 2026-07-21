@@ -1,6 +1,3 @@
-from __future__ import annotations
-
-from abc import ABC
 from aiohttp import ClientResponse, ClientSession, ClientTimeout
 from dataclasses import dataclass
 from typing import Any, Final
@@ -18,6 +15,8 @@ SET_TEMP_SUFFIX: Final = "/setThermostatWorkModeNew"
 KNOWN_DEVICE_TYPES: Final = "1,2,4,10,20,23,25"
 
 ATTR_DEVICE_ID: Final = "device_id"
+ATTR_DEVICE_IP: Final = "device_ipAddress"
+ATTR_DEVICE_MAC: Final = "device_mac"
 ATTR_DEVICE_NAME: Final = "device_name"
 ATTR_DEVICE_TYPE: Final = "device_type"
 
@@ -66,6 +65,7 @@ class ESICentroAPI:
         self._url = url
         self._auth: ESIAuthorization | None = None
         self._message_id = 0
+        self._devices: dict | None = None
 
     def available(self) -> bool:
         """Check if this coordinator is available."""
@@ -131,12 +131,12 @@ class ESICentroAPI:
         token = data["user"]["token"]
         self._auth = ESIAuthorization(user_id=user_id, token=token)
 
-    async def async_list_devices(
+    async def async_update_devices(
         self,
         *,
         device_types_csv: str = KNOWN_DEVICE_TYPES,
         page_size: int = 100,
-    ) -> dict[str, Any]:
+    ) -> None:
         if self._auth is None:
             raise ESINoAuthorization("No authorization available")
 
@@ -168,23 +168,31 @@ class ESICentroAPI:
             self._auth = None
             raise ESIDeviceListError("Device list fetch failed")
 
-        return {"devices": data["devices"]}
+        self._devices = data["devices"]
 
+    # The value of work_mode depends on the type of the device
+    # Temperature is a float with is the target temp in Celcius.
     async def async_set_work_mode(
         self,
         *,
         device_id: str,
         work_mode: int,
-        temperature: int,
+        temperature: float,
         message_id: int | None = None,
     ) -> None:
         if self._auth is None:
             raise ESINoAuthorization("No authorization available")
 
-        # The message ID is sent as a 16bit field to the device with each update.
+        # The message ID is sent as a 16bit field to the device with each update,
+        # we'll protect the caller from sending values out of range.
         # It might be useful for a client to maintain a per device counter, but we
         # default to an internally managed incremental counter.
         messageIdStr = f"{message_id&0xFFFF:04x}" if message_id is not None else f"{self._next_message_id():04x}"
+
+        # The API needs the temperature to be an integer, 10 times the actual in Celcius
+        # Precision is 0.5 degress, but in case the precision varies by device type, it is
+        # not enforced here, but may be by the ESI server.
+        api_temp = int(temperature*10.0)
 
         params = {
             "user_id": self._auth.user_id,
@@ -192,7 +200,7 @@ class ESICentroAPI:
             "messageId": messageIdStr,
             ATTR_DEVICE_ID: device_id,
             ATTR_WORK_MODE: str(work_mode),
-            ATTR_TARGET_TEMPERATURE: temperature,
+            ATTR_TARGET_TEMPERATURE: api_temp,
         }
 
         async with self._session.post(
@@ -212,3 +220,30 @@ class ESICentroAPI:
             # Assume token is invalid and clear it so that we re-login next time
             self._auth = None
             raise ESISetCommandError(f"API error {error_code}: {error_msg}")
+
+
+    def num_devices(self) -> int:
+        """Return the number of devices currently stored."""
+        if self._devices is None:
+            return 0
+        return len(self._devices)
+
+
+    # Only use device_by_index for enumerating devices, in case the order of devices changes.
+    def device_by_index(self, index: int) -> dict[str, Any] | None:
+        """Return the device at the given index, or None if out of range."""
+        if self._devices is None:
+            return None
+        if index < 0 or index >= len(self._devices):
+            return None
+        return self._devices[index]
+
+
+    def device_by_device_id(self, device_id: str) -> dict[str, Any] | None:
+        for i in range(self.num_devices()):
+            d = self.device_by_index(i)
+            if d is not None:
+                if d.get(ATTR_DEVICE_ID, None) == device_id:
+                    return d
+        return None
+
