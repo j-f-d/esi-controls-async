@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "esi-controls-async"
-version = "0.0.1"
+version = "0.0.2"
 authors = [
   { name="Julian Day", email="julianfday@gmail.com" },
 ]
-description = "Python API asyncclient to the ESI Controls API for monitoring and controlling your thermostat."
+description = "Python API async client to the ESI Controls API for monitoring and controlling your thermostat."
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
