@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import aiohttp, asyncio, argparse, sys
-from typing import Any
 
 sys.path.append("src/esi-controls-async")
 from esi_async import (ESICentroAPI, ATTR_DEVICE_ID)
