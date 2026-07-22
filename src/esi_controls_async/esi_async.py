@@ -82,11 +82,14 @@ class ESICentroAPI:
 
     async def _json(self, response: ClientResponse) -> dict[str, Any]:
         """Local wrapper for JSON parsing function"""
+        response.raise_for_status()
         if response.status != 200:
+            # Got a response, but not OK, see what it was.
             try:
                 body = await response.text()
             except Exception:
                 body = "<no body>"
+            # Bail because this was unexpected.
             raise ESIProtocolError(f"API request failed: {response.status} body={body[:500]}")
 
         try:
@@ -220,6 +223,12 @@ class ESICentroAPI:
             # Assume token is invalid and clear it so that we re-login next time
             self._auth = None
             raise ESISetCommandError(f"API error {error_code}: {error_msg}")
+
+
+    # HASS DataUpateCoordinator needs this a way to return all the devices for the
+    # DataUpdateCoordinator.
+    def get_devices(self) -> dict | None:
+        return self._devices
 
 
     def num_devices(self) -> int:

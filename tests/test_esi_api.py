@@ -2,8 +2,7 @@
 import aiohttp, asyncio, argparse, sys
 
 sys.path.append("src/esi-controls-async")
-from esi_async import (ESICentroAPI, ATTR_DEVICE_ID)
-from esi_device import ESIDevice
+from esi_controls_async import (ESICentroAPI, ESIDevice, ATTR_DEVICE_ID)
 
 
 def prompt_int(prompt: str) -> int:
@@ -72,7 +71,7 @@ async def main() -> None:
             d = api.device_by_index(i)
             if d is None:
                 continue
-            ed = ESIDevice(api = api, device_id = d.get(ATTR_DEVICE_ID, ""))
+            ed = ESIDevice(api = api, raw_data = d)
             found.append(ed)
             print(f"  [{i}] ", end='')
             print_device(ed)
@@ -104,12 +103,14 @@ async def main() -> None:
 
         # Allow the update to propagate
         print(f"Waiting...")
-        await asyncio.sleep(3.0)
-        await api.async_update_devices()
+        await asyncio.sleep(5.0)
+
+        # This update is unnecessary because d.async_update calls async_update_devices()
+        # await api.async_update_devices()
 
         print("\nChecking update success...")
         for d in chosen:
-            d.update()
+            await d.async_update()
             print_device(d)
 
         print("\nDone.")

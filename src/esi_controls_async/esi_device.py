@@ -1,5 +1,5 @@
 import datetime as dt
-from esi_async import (ESICentroAPI, ATTR_DEVICE_ID, ATTR_DEVICE_IP, ATTR_DEVICE_MAC,
+from .esi_async import (ESICentroAPI, ATTR_DEVICE_ID, ATTR_DEVICE_IP, ATTR_DEVICE_MAC,
                         ATTR_DEVICE_NAME, ATTR_DEVICE_TYPE, ATTR_MEASURED_TEMPERATURE,
                         ATTR_TARGET_TEMPERATURE, ATTR_WORK_MODE, ATTR_TH_WORK)
 
@@ -15,13 +15,10 @@ class ESIDeviceInitError(ESIDeviceError):
 class ESIDevice:
     """Represents a single ESI device."""
 
-    def __init__(self, *, api: ESICentroAPI, device_id: str) -> None:
+    def __init__(self, *, raw_data: dict, api: ESICentroAPI) -> None:
         """Initialise an ESI device from raw data."""
         self._api = api
-        self._raw_data = api.device_by_device_id(device_id)
-        if self._raw_data is None:
-            raise ESIDeviceInitError
-        self._device_id = self._raw_data.get(ATTR_DEVICE_ID, None)
+        self._raw_data = raw_data
         self._last_update = dt.datetime.now()
 
 
@@ -122,12 +119,13 @@ class ESIDevice:
         await self._api.async_set_work_mode(device_id=self.device_id, work_mode=work_mode, temperature=temperature, message_id=message_id)
 
 
-    def update(self) -> None:
+    async def async_update(self) -> None:
         """Update the device's data from the API."""
-        if self._device_id is None:
+        await self._api.async_update_devices()
+        if self.device_id is None:
             raise ValueError("Device ID is unknown")
         # Update the raw data for this device
-        d = self._api.device_by_device_id(self._device_id)
+        d = self._api.device_by_device_id(self.device_id)
         if d is not None:
             self._raw_data = d
             self._last_update = dt.datetime.now()

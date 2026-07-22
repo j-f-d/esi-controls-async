@@ -12,14 +12,15 @@ Apparently, the ESI Controls 'Centro' mobile app uses a superset of those reques
 
 ## ESICentroAPI Usage
 
-This API depends on being initialized with a aiohttp.ClientSession:
+The ESICentroAPI satisfies the needs of [Authentication], and because it is async, this API depends on being initialized with an aiohttp.ClientSession:
 
 ```Python
-import aiohttp, esi_async
+import aiohttp
+from esi_controls_async import (ESICentroAPI, ATTR_DEVICE_ID)
 async def esi_client() -> None:
     # E.g. No existing session, so create one.
     async with aiohttp.ClientSession() as session:
-        api = esi_async.ESICentroAPI(session=session)
+        api = ESICentroAPI(session=session)
 ```
 
 With the resulting object, you can login to associate a user_id and token, which
@@ -101,8 +102,38 @@ To check whether the update took effect:
         print(f"id={dev_id} temp={target_temp:.1f}")
 ```
 
+## ESIDevice Usage
+
+Additionally, there is a [Modelling data] class called ESIDevice.
+
+```Python
+        from esi_controls_async import ESIDevice
+        ...
+        dev=ESIDevice(raw_data = api.device_by_index(0), api = api)
+```
+
+There are properties to extact the various attributes:
+
+```Python
+    idle = d.th_work=="0"
+    print(f"id={d.device_id!r}", f"name={d.device_name!r}", f"type={d.device_type!r}",
+          f"measured={d.measured_temperature:.1f}", f"target={d.target_temperature:.1f}",
+          f"work_mode={d.work_mode!r}", f"idle={idle}")
+```
+
+Also to set the work mode of a device and to update the state:
+
+```Python
+        await d.async_set_work_mode(work_mode=work_mode, temperature=temperature)
+        # Allow some time to propagate status to the device
+        await asyncio.sleep(5.0)
+        await d.async_update()
+```
+
 [ESI_Controls]: <https://github.com/josh-taylor/esi/>
 [ESCTP5]: <https://www.esicontrols.co.uk/product/wifi-programmable-cylinder-thermostat/>
 [HASS_ESI_Thermostat]: <https://github.com/DeclanSC/hass-esi-thermostat>
 [HASS_ESI_Thermostat-jfd]: <https://github.com/j-f-d/hass-esi-thermostat>
 [Building_a_Python_Library_for_an_API]: <https://developers.home-assistant.io/docs/api_lib_index>
+[Authentication]: <https://developers.home-assistant.io/docs/api_lib_auth>
+[Modelling data]: <https://developers.home-assistant.io/docs/api_lib_data_models>
