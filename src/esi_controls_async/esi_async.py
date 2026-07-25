@@ -80,7 +80,7 @@ class ESICentroAPI:
         self._message_id &= 0xFFFF  # Keep the message ID within 16 bits
         return self._message_id
 
-    async def _json(self, response: ClientResponse) -> dict[str, Any]:
+    async def _async_json(self, response: ClientResponse) -> dict[str, Any]:
         """Local wrapper for JSON parsing function"""
         response.raise_for_status()
         if response.status != 200:
@@ -117,7 +117,7 @@ class ESICentroAPI:
                 f"content-type={response.headers.get('content-type')} body={body[:500]}"
             ) from err
 
-    async def login(self, *, email: str, password: str) -> None:
+    async def async_login(self, *, email: str, password: str) -> None:
         payload = {"email": email, "password": password}
 
         async with self._session.post(
@@ -125,7 +125,7 @@ class ESICentroAPI:
             data=payload,
             timeout=ClientTimeout(total=15),
         ) as response:
-            data = await self._json(response)
+            data = await self._async_json(response)
 
         if not data.get("statu") or not data.get("user", {}).get("token"):
             raise ESILoginError("Login failed")
@@ -164,7 +164,7 @@ class ESICentroAPI:
             params=params,
             timeout=ClientTimeout(total=15),
         ) as response:
-            data = await self._json(response)
+            data = await self._async_json(response)
 
         if not data.get("statu") or "devices" not in data:
             # Assume token is invalid and clear it so that we re-login next time
@@ -211,7 +211,7 @@ class ESICentroAPI:
             params=params,
             timeout=ClientTimeout(total=5),
         ) as response:
-            data = await self._json(response)
+            data = await self._async_json(response)
 
         if not data.get("statu"):
             error_msg = data.get("message", "Unknown error")

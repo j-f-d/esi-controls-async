@@ -54,7 +54,7 @@ async def main() -> None:
 
     async with aiohttp.ClientSession() as session:
         api = ESICentroAPI(session=session)
-        await api.login(email=args.email, password=args.password)
+        await api.async_login(email=args.email, password=args.password)
 
         await api.async_update_devices(
             device_types_csv=device_types_csv,

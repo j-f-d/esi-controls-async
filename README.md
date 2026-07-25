@@ -28,7 +28,7 @@ will be used for the session. The user_id and token are long lived, but if they
 do expire, you can log in again. The API doesn't store the email and password.
 
 ```Python
-        await api.login(email=args.email, password=args.password)
+        await api.async_login(email=args.email, password=args.password)
 ```
 
 Assuming authorization was successful, available will return true.
@@ -54,6 +54,12 @@ Once the update is complete, the number of devices found can be checked:
         if api.num_devices() == 0:
             print("No devices returned.")
             return
+```
+
+To get a dict of all the devices:
+
+```Python
+        raw_devs = api.get_devices()
 ```
 
 To retrieve the dict for first device. The most common attributes have constants associated with them. Also be careful about the spellings used by the protocol as some of them deviate from English in surprising ways:
@@ -109,6 +115,7 @@ Additionally, there is a [Modelling data] class called ESIDevice.
 ```Python
         from esi_controls_async import ESIDevice
         ...
+        # Assuming at least one valid device
         dev=ESIDevice(raw_data = api.device_by_index(0), api = api)
 ```
 
