@@ -37,6 +37,9 @@ class ESIProtocolError(Exception):
     """Base error for ESI protocol/library."""
 
 
+class ESIServerError(ESIProtocolError):
+    """Raised when Posting fails."""
+
 class ESILoginError(ESIProtocolError):
     """Raised when login fails."""
 
@@ -120,12 +123,15 @@ class ESICentroAPI:
     async def async_login(self, *, email: str, password: str) -> None:
         payload = {"email": email, "password": password}
 
-        async with self._session.post(
-            self._url + LOGIN_SUFFIX,
-            data=payload,
-            timeout=ClientTimeout(total=15),
-        ) as response:
-            data = await self._async_json(response)
+        try:
+            async with self._session.post(
+                self._url + LOGIN_SUFFIX,
+                data=payload,
+                timeout=ClientTimeout(total=15),
+            ) as response:
+                data = await self._async_json(response)
+        except Exception as exc:
+            raise ESIServerError("Post failed") from exc
 
         if not data.get("statu") or not data.get("user", {}).get("token"):
             raise ESILoginError("Login failed")
@@ -159,12 +165,17 @@ class ESICentroAPI:
             "online": 1,
         }
 
-        async with self._session.post(
-            self._url + DEVICE_LIST_SUFFIX,
-            params=params,
-            timeout=ClientTimeout(total=15),
-        ) as response:
-            data = await self._async_json(response)
+        try:
+            async with self._session.post(
+                self._url + DEVICE_LIST_SUFFIX,
+                params=params,
+                timeout=ClientTimeout(total=15),
+            ) as response:
+                data = await self._async_json(response)
+        except:
+            # Assume token is invalid and clear it so that we re-login next time
+            self._auth = None
+            raise ESIServerError("Device list fetch failed")
 
         if not data.get("statu") or "devices" not in data:
             # Assume token is invalid and clear it so that we re-login next time
@@ -206,12 +217,17 @@ class ESICentroAPI:
             ATTR_TARGET_TEMPERATURE: api_temp,
         }
 
-        async with self._session.post(
-            self._url + SET_TEMP_SUFFIX,
-            params=params,
-            timeout=ClientTimeout(total=5),
-        ) as response:
-            data = await self._async_json(response)
+        try:
+            async with self._session.post(
+                self._url + SET_TEMP_SUFFIX,
+                params=params,
+                timeout=ClientTimeout(total=5),
+            ) as response:
+                data = await self._async_json(response)
+        except:
+            # Assume token is invalid and clear it so that we re-login next time
+            self._auth = None
+            raise ESIServerError("Work mode change")
 
         if not data.get("statu"):
             error_msg = data.get("message", "Unknown error")
