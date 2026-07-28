@@ -1,8 +1,17 @@
 #!/usr/bin/env python3
 import aiohttp, asyncio, argparse, sys
+from typing import Any
 
 sys.path.append("src/esi-controls-async")
-from esi_controls_async import (ESICentroAPI, ESIDevice, ATTR_DEVICE_ID)
+from esi_controls_async import (
+    ESICentroAPI,
+    ESIDevice,
+    ESIDeviceType,
+    ESIHWThermostatWorkMode,
+    ESIRoomThermostatWorkMode,
+    ESITHWork,
+    device_type
+)
 
 
 def prompt_int(prompt: str) -> int:
@@ -14,10 +23,10 @@ def prompt_int(prompt: str) -> int:
             print("Please enter a valid integer.")
 
 
-def prompt_choice(prompt: str, mapping: dict[str, int]) -> int:
+def prompt_choice(prompt: str, mapping: dict[str, Any]) -> int:
     keys = "/".join(mapping.keys())
     while True:
-        raw = input(f"{prompt} ({keys}): ").strip().lower()
+        raw = input(f"{prompt} ({keys}): ").strip()
         if raw in mapping:
             return mapping[raw]
         print(f"Please enter one of: {keys}")
@@ -29,10 +38,24 @@ def parse_indices(raw: str) -> list[int]:
 
 
 def print_device(ed : ESIDevice) -> None:
-    idle = ed.th_work=="0"
+    idle = ed.th_work==str(ESITHWork.Idle)
+
+    dev_type = device_type(ed)
+
+    work_mode = ed.work_mode
+    if work_mode is None:
+        str_work_mode = "Unknown"
+    else:
+        match dev_type:
+            case ESIDeviceType.RoomThermostat:
+                str_work_mode = ESIRoomThermostatWorkMode(work_mode).name
+            case ESIDeviceType.HWThermostat:
+                str_work_mode = ESIHWThermostatWorkMode(work_mode).name
+            case None | _:
+                str_work_mode = str(work_mode)
     print(f"id={ed.device_id!r}", f"name={ed.device_name!r}", f"type={ed.device_type!r}",
           f"measured={ed.measured_temperature:.1f}", f"target={ed.target_temperature:.1f}",
-          f"work_mode={ed.work_mode!r}", f"idle={idle}")
+          f"work_mode={str_work_mode!r}", f"idle={idle}")
 
 
 async def main() -> None:
@@ -47,10 +70,6 @@ async def main() -> None:
     device_types_csv = args.device_types_csv or input("Enter device_types_csv (e.g. '1' or '1,2'): ").strip()
     if not device_types_csv:
         raise SystemExit("device_types_csv cannot be empty.")
-
-    # These are correct for the water heater devices
-    work_mode_waterheater = {"auto": 0, "off": 1, "manual": 2, "override": 4, "boost": 5}
-    work_mode_climate = {"auto": 0, "override": 1, "off": 4, "manual": 5}
 
     async with aiohttp.ClientSession() as session:
         api = ESICentroAPI(session=session)
@@ -87,10 +106,11 @@ async def main() -> None:
             chosen.append(d)
 
         if chosen and chosen[0].device_type == "81":
-            work_mode_map = work_mode_waterheater
+            work_mode_map = ESIHWThermostatWorkMode.__members__
             eg_temp = 55.0
         else:
-            work_mode_map = work_mode_climate
+            # There are more choices for Room Thermostats
+            work_mode_map = ESIRoomThermostatWorkMode.__members__
             eg_temp = 20.0
 
         temperature = float(input(f"Enter target temperature in Celcius (e.g. {eg_temp:.1f}): ").strip() or str(eg_temp))
@@ -99,7 +119,7 @@ async def main() -> None:
         print("\nSending command...")
         for d in chosen:
             print(f"  -> device_id={d.device_id} work_mode={d.work_mode} temperature={temperature:.1f}C")
-            await d.async_set_work_mode(work_mode=work_mode, temperature=temperature)
+            await d.async_set_work_mode(work_mode=int(work_mode), temperature=temperature)
 
         # Allow the update to propagate
         print(f"Waiting...")

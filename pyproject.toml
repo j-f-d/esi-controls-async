@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "esi-controls-async"
-version = "1.0.1"
+version = "1.0.2"
 authors = [
   { name="Julian Day", email="julianfday@gmail.com" },
 ]
@@ -12,6 +12,7 @@ description = "Python API async client to the ESI Controls API for monitoring an
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
+    "aenum",
     "aiohttp",
 ]
 classifiers = [
