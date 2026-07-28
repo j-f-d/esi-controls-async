@@ -137,6 +137,25 @@ Also to set the work mode of a device and to update the state:
         await d.async_update()
 ```
 
+## Extra types to help with conversions
+
+In ```__init__.py```, there are IntEnum classes:
+
+* ESIDeviceType
+* ESIRoomThermostatWorkMode
+* ESIHWThermostatWorkMode
+* ESITHWork
+
+These capture information which isn't necessarily obvious from the returned requests.
+
+There is also the function:
+
+```Python
+def device_type(ed : ESIDevice) -> ESIDeviceType | None:
+```
+
+This is useful to determine the ESIDeviceType of an ESIDevice for subsequent use of the correct WorkMode class.
+
 [ESI_Controls]: <https://github.com/josh-taylor/esi/>
 [ESCTP5]: <https://www.esicontrols.co.uk/product/wifi-programmable-cylinder-thermostat/>
 [HASS_ESI_Thermostat]: <https://github.com/DeclanSC/hass-esi-thermostat>
