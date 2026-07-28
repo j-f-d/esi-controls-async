@@ -8,7 +8,6 @@ DEVICE_LIST_SUFFIX: Final = "/getDeviceListNew"
 SET_TEMP_SUFFIX: Final = "/setThermostatWorkModeNew"
 
 # The device types with the exception of 1 are from https://github.com/josh-taylor/esi/blob/main/esi/esi.py
-# Device type 1 is discovered by trial and error.
 # These are used for the ATTR_DEVICE_TYPE parameter when fetching devices.
 # Device type 1 comes from the DeclanSC's esi_thermostat integration for Home Assistant.
 # The other device types come from Josh Taylor's esi-controls library.
