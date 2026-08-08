@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
-import aiohttp, asyncio, argparse, sys
+import argparse
+import asyncio
+import sys
 from typing import Any
+
+import aiohttp
 
 sys.path.append("src/esi-controls-async")
 from esi_controls_async import (
@@ -10,7 +14,7 @@ from esi_controls_async import (
     ESIHWThermostatWorkMode,
     ESIRoomThermostatWorkMode,
     ESITHWork,
-    device_type
+    device_type,
 )
 
 
@@ -122,7 +126,7 @@ async def main() -> None:
             await d.async_set_work_mode(work_mode=int(work_mode), temperature=temperature)
 
         # Allow the update to propagate
-        print(f"Waiting...")
+        print("Waiting...")
         await asyncio.sleep(5.0)
 
         # This update is unnecessary because d.async_update calls async_update_devices()

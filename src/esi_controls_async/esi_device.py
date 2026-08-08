@@ -1,7 +1,19 @@
+"""ESI Device library for ESI Controls async API."""
+
 import datetime as dt
-from .esi_async import (ESICentroAPI, ATTR_DEVICE_ID, ATTR_DEVICE_IP, ATTR_DEVICE_MAC,
-                        ATTR_DEVICE_NAME, ATTR_DEVICE_TYPE, ATTR_MEASURED_TEMPERATURE,
-                        ATTR_TARGET_TEMPERATURE, ATTR_WORK_MODE, ATTR_TH_WORK)
+
+from .esi_async import (
+    ATTR_DEVICE_ID,
+    ATTR_DEVICE_IP,
+    ATTR_DEVICE_MAC,
+    ATTR_DEVICE_NAME,
+    ATTR_DEVICE_TYPE,
+    ATTR_MEASURED_TEMPERATURE,
+    ATTR_TARGET_TEMPERATURE,
+    ATTR_TH_WORK,
+    ATTR_WORK_MODE,
+    ESICentroAPI,
+)
 
 
 class ESIDeviceError(Exception):
@@ -19,7 +31,7 @@ class ESIDevice:
         """Initialise an ESI device from raw data."""
         self._api = api
         self._raw_data = raw_data
-        self._last_update = dt.datetime.now()
+        self._last_update = dt.datetime.now(tz=dt.UTC)
 
 
     @property
@@ -128,5 +140,5 @@ class ESIDevice:
         d = self._api.device_by_device_id(self.device_id)
         if d is not None:
             self._raw_data = d
-            self._last_update = dt.datetime.now()
+            self._last_update = dt.datetime.now(tz=dt.UTC)
         

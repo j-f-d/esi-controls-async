@@ -1,6 +1,15 @@
-from aiohttp import ClientResponse, ClientSession, ClientTimeout
+"""ESI protocol/library for login, fetch, and set-thermostat commands."""
+
 from dataclasses import dataclass
 from typing import Any, Final
+
+from aiohttp import (
+    ClientError,
+    ClientResponse,
+    ClientSession,
+    ClientTimeout,
+    ContentTypeError,
+)
 
 ESICENTRO_URL: Final = "https://esiheating.uksouth.cloudapp.azure.com/centro"
 LOGIN_SUFFIX: Final = "/login"
@@ -266,8 +275,7 @@ class ESICentroAPI:
     def device_by_device_id(self, device_id: str) -> dict[str, Any] | None:
         for i in range(self.num_devices()):
             d = self.device_by_index(i)
-            if d is not None:
-                if d.get(ATTR_DEVICE_ID, None) == device_id:
-                    return d
+            if d is not None and d.get(ATTR_DEVICE_ID, None) == device_id:
+                return d
         return None
 

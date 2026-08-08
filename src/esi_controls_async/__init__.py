@@ -2,8 +2,9 @@
 
 from aenum import IntEnum, unique
 
-from . esi_async import *
-from . esi_device import (ESIDevice, ESIDeviceInitError)
+from .esi_async import *
+from .esi_device import ESIDevice, ESIDeviceInitError
+
 
 @unique
 class ESIDeviceType(IntEnum):
@@ -65,9 +66,9 @@ def device_type(ed : ESIDevice) -> ESIDeviceType | None:
 
 __all__ = [
     # From esi_async.py
-    "ESICentroAPI", "ESILoginError", "ESIDeviceListError", "ESISetCommandError", "ESINoAuthorization",
+    "ESICentroAPI", "ESIDeviceListError",  "ESILoginError", "ESINoAuthorization", "ESISetCommandError",
     # From esi_device.py
     "ESIDevice", "ESIDeviceInitError",
     # From here
-    "ESIDeviceType", "ESIRoomThermostatWorkMode", "ESIHWThermostatWorkMode", "ESITHWork", "device_type"
+    "ESIDeviceType", "ESIHWThermostatWorkMode", "ESIRoomThermostatWorkMode", "ESITHWork", "device_type"
 ] 
