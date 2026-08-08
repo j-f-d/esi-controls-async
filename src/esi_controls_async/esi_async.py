@@ -89,7 +89,7 @@ class ESICentroAPI:
             # Got a response, but not OK, see what it was.
             try:
                 body = await response.text()
-            except Exception:
+            except (ClientError, UnicodeDecodeError):
                 body = "<no body>"
             # Bail because this was unexpected.
             raise ESIProtocolError(f"API request failed: {response.status} body={body[:500]}")
@@ -109,10 +109,10 @@ class ESICentroAPI:
                     "content-type", "application/json"
                 ).lower()
             )
-        except Exception as err:
+        except (ContentTypeError, ValueError) as err:
             try:
                 body = await response.text()
-            except Exception:
+            except (ClientError, UnicodeDecodeError):
                 body = "<no body>"
             raise ESIProtocolError(
                 f"Response not recognised as JSON: {err}. "
@@ -129,7 +129,7 @@ class ESICentroAPI:
                 timeout=ClientTimeout(total=15),
             ) as response:
                 data = await self._async_json(response)
-        except Exception as exc:
+        except (TimeoutError, ClientError) as exc:
             raise ESIServerError("Post failed") from exc
 
         if not data.get("statu") or not data.get("user", {}).get("token"):
@@ -171,10 +171,10 @@ class ESICentroAPI:
                 timeout=ClientTimeout(total=15),
             ) as response:
                 data = await self._async_json(response)
-        except:
+        except (ClientError, TimeoutError, ESIProtocolError) as exc:
             # Assume token is invalid and clear it so that we re-login next time
             self._auth = None
-            raise ESIServerError("Device list fetch failed")
+            raise ESIServerError("Device list fetch failed") from exc
 
         if not data.get("statu") or "devices" not in data:
             # Assume token is invalid and clear it so that we re-login next time
@@ -223,10 +223,10 @@ class ESICentroAPI:
                 timeout=ClientTimeout(total=5),
             ) as response:
                 data = await self._async_json(response)
-        except:
+        except (ClientError, TimeoutError, ESIProtocolError) as exc:
             # Assume token is invalid and clear it so that we re-login next time
             self._auth = None
-            raise ESIServerError("Work mode change")
+            raise ESIServerError("Work mode change") from exc
 
         if not data.get("statu"):
             error_msg = data.get("message", "Unknown error")
