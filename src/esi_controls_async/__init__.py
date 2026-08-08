@@ -1,18 +1,20 @@
 """ESI Controls Async API exported interface"""
 
-from aenum import IntEnum, unique
+from aenum import Enum, unique
 
 from .esi_async import *
 from .esi_device import ESIDevice, ESIDeviceInitError
 
 
 @unique
-class ESIDeviceType(IntEnum):
+class ESIDeviceType(Enum): # type: ignore
+    """Enumeration of device types."""
+
     RoomThermostat = 80
     HWThermostat = 81
 
 @unique
-class ESIRoomThermostatWorkMode(IntEnum):
+class ESIRoomThermostatWorkMode(Enum): # type: ignore
     """Enumeration of climate work modes for the room thermostat.
 
     Values correspond to the device's reported work mode codes.
@@ -30,7 +32,7 @@ class ESIRoomThermostatWorkMode(IntEnum):
     ManualBoost = 9
 
 @unique
-class ESIHWThermostatWorkMode(IntEnum):
+class ESIHWThermostatWorkMode(Enum): # type: ignore
     """Work mode for Hot Water Cylinder Thermostat devices.
 
     Values correspond to the device's reported work mode codes.
@@ -49,7 +51,7 @@ class ESIHWThermostatWorkMode(IntEnum):
 
 # TH_WORK seems to be one of two strings indicating idle or heating
 @unique
-class ESITHWork(IntEnum):
+class ESITHWork(Enum): # type: ignore
     Idle = 0
     Heating = 1
 
